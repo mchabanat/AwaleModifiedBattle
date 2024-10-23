@@ -1,0 +1,3 @@
+C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle/cmake-build-debug/CMakeFiles/AwaleModifiedBattle.dir
+C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle/cmake-build-debug/CMakeFiles/rebuild_cache.dir

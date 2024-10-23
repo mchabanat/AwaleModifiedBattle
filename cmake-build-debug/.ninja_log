@@ -1,0 +1,24 @@
+# ninja log v6
+9	722	7513923554775217	CMakeFiles/AwaleModifiedBattle.dir/main.cpp.obj	90d57eb14eb8f71d
+723	883	7513923561906038	AwaleModifiedBattle.exe	eb0ebcfb7906edec
+14	582	7513939837116306	CMakeFiles/AwaleModifiedBattle.dir/main.cpp.obj	90d57eb14eb8f71d
+20	600	7513939837168797	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+600	742	7513939842965142	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+13	516	7513940535941385	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+517	635	7513940540980851	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+15	505	7513940674512803	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+506	607	7513940679427064	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+12	497	7513941058812811	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+497	590	7513941063661191	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+17	553	7513941342425367	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+554	652	7513941347791827	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+14	533	7513941541764297	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+534	648	7513941546971321	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+18	482	7513941654134881	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+482	583	7513941658774409	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+14	629	7513941798120872	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+630	723	7513941804271518	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+16	556	7513942079184581	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+556	658	7513942084596606	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
+17	528	7513942197575904	CMakeFiles/AwaleModifiedBattle.dir/AwaleGame.cpp.obj	c3b1df18b39ecf43
+529	624	7513942202687342	AwaleModifiedBattle.exe	e3a5ac21f21ac3a5
