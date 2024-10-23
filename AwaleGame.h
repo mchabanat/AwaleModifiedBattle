@@ -4,6 +4,7 @@
 
 #ifndef AWALEGAME_H
 #define AWALEGAME_H
+#include <string>
 
 enum Color { Blue, Red };
 
@@ -14,7 +15,7 @@ private:
         int blue;
     };
 
-    struct Coup {
+    struct Move {
         int holeNumber;
         Color color;
     };
@@ -28,6 +29,7 @@ public:
     AwaleGame();
     void displayBoard();
     void playGame();
+    bool makeMove(const std::string &);
 };
 
 #endif //AWALEGAME_H
