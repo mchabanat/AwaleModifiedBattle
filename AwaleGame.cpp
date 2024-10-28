@@ -34,6 +34,7 @@ void AwaleGame::displayBoard() {
         cout << _board[i].blue << "B";
         if (i > 8) cout << " | ";
     }
+    cout << "\n";
 }
 
 void AwaleGame::playGame() {
@@ -60,9 +61,19 @@ void AwaleGame::playGame() {
 bool AwaleGame::makeMove(const string &input) {
     // Vérif de l'input
     Move move;
-    move.holeNumber = input[0] - '0' - 1;
+    // Vérifier la longueur pour savoir si l'index est à un ou deux chiffres
+    if (input.length() == 3) {
+        // Extraction pour les numéros à deux chiffres (10 à 16)
+        move.holeNumber = std::stoi(input.substr(0, 2));
+    } else if (input.length() == 2) {
+        // Extraction pour les numéros à un chiffre (1 à 9)
+        move.holeNumber = input[0] - '0';
+    } else {
+        // Format d'entrée invalide
+        return false;
+    }
 
-    if (move.holeNumber < 0 || move.holeNumber > 15) {
+    if (move.holeNumber < 1 || move.holeNumber > 16) {
         return false;
     } else {
         // Si le joueur 2 a saisi un nombre pair, ce n'est pas valide
@@ -75,7 +86,9 @@ bool AwaleGame::makeMove(const string &input) {
         }
     }
 
-    switch (input[1]) {
+    move.holeNumber-=1;
+
+    switch (input.back()) {
         case 'R':
             move.color = Red;
         break;
@@ -87,8 +100,62 @@ bool AwaleGame::makeMove(const string &input) {
     }
 
     // Vérifier que le trou joué contient la couleur choisie
-
+    if ((move.color == Red && _board[move.holeNumber].red == 0) || (move.color == Blue && _board[move.holeNumber].blue == 0)) {
+        // Le trou ne contient pas la couleur choisie
+        return false;
+    }
 
     // Jouer le coup
+    int seeds = (move.color == Red) ? _board[move.holeNumber].red : _board[move.holeNumber].blue;
 
+    // Vide le trou de départ de la couleur choisie
+    if (move.color == Red) {
+        _board[move.holeNumber].red = 0;
+    } else {
+        _board[move.holeNumber].blue = 0;
+    }
+
+    int index = move.holeNumber;
+    // Distribution des graines bleues
+    if (move.color == Blue) {
+        while (seeds > 0) {
+            index = (index + 1) % 16;
+
+            // Ne pas redistribuer dans le trou de départ
+            if (index == move.holeNumber) continue;
+
+            _board[index].blue++;
+            seeds--;
+        }
+    }
+
+    // Distribution des graines rouges avec saut de 2 cases
+    if (move.color == Red) {
+        // Passer directement au premier trou de l’adversaire
+        index = (index + 1) % 16;
+
+        while (seeds > 0) {
+            _board[index].red++;
+            seeds--;
+
+            // Incrément de 2 à chaque tour pour passer aux cases adverses
+            index = (index + 2) % 16;
+        }
+    }
+
+    // Capture des graines
+    captureSeeds();
+
+    // Changer de joueur
+    switchPlayer();
+
+    return true;
+}
+
+void AwaleGame::captureSeeds() {
+
+}
+
+inline void AwaleGame::switchPlayer() {
+    _currentPlayer = 3 - _currentPlayer;
 }
