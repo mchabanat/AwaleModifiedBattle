@@ -30,7 +30,6 @@ public:
     void displayBoard();
     void playGame();
     bool makeMove(const std::string &);
-    void captureSeeds();
     void switchPlayer();
 };
 

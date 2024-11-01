@@ -64,7 +64,7 @@ bool AwaleGame::makeMove(const string &input) {
     // Vérifier la longueur pour savoir si l'index est à un ou deux chiffres
     if (input.length() == 3) {
         // Extraction pour les numéros à deux chiffres (10 à 16)
-        move.holeNumber = std::stoi(input.substr(0, 2));
+        move.holeNumber = stoi(input.substr(0, 2));
     } else if (input.length() == 2) {
         // Extraction pour les numéros à un chiffre (1 à 9)
         move.holeNumber = input[0] - '0';
@@ -116,6 +116,8 @@ bool AwaleGame::makeMove(const string &input) {
     }
 
     int index = move.holeNumber;
+    int capturedSeeds = 0;
+
     // Distribution des graines bleues
     if (move.color == Blue) {
         while (seeds > 0) {
@@ -126,6 +128,16 @@ bool AwaleGame::makeMove(const string &input) {
 
             _board[index].blue++;
             seeds--;
+
+            // Capture des seeds dans le trou actuel
+            int seedsInHole = _board[index].blue + _board[index].red;
+            if (seedsInHole == 2 || seedsInHole == 3) {
+                capturedSeeds += seedsInHole;
+                _board[index].blue = 0;
+                _board[index].red = 0;
+            } else {
+                capturedSeeds = 0;
+            }
         }
     }
 
@@ -138,22 +150,32 @@ bool AwaleGame::makeMove(const string &input) {
             _board[index].red++;
             seeds--;
 
+            // Capture des seeds dans le trou actuel
+            int seedsInHole = _board[index].blue + _board[index].red;
+            if (seedsInHole == 2 || seedsInHole == 3) {
+                capturedSeeds += seedsInHole;
+                _board[index].blue = 0;
+                _board[index].red = 0;
+            } else {
+                capturedSeeds = 0;
+            }
+
             // Incrément de 2 à chaque tour pour passer aux cases adverses
             index = (index + 2) % 16;
         }
     }
 
-    // Capture des graines
-    captureSeeds();
+    // Ajout des seeds capturées au score du joueur courant
+    if (_currentPlayer == 1) {
+        _scorePlayer1 += capturedSeeds;
+    } else {
+        _scorePlayer2 += capturedSeeds;
+    }
 
     // Changer de joueur
     switchPlayer();
 
     return true;
-}
-
-void AwaleGame::captureSeeds() {
-
 }
 
 inline void AwaleGame::switchPlayer() {
