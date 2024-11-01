@@ -24,6 +24,7 @@ private:
     int _scorePlayer1;
     int _scorePlayer2;
     int _currentPlayer;    // 1 pour joueur 1, 2 pour joueur 2
+    int _totalSeedsOnBoard;
 
 public:
     AwaleGame();
@@ -31,6 +32,10 @@ public:
     void playGame();
     bool makeMove(const std::string &);
     void switchPlayer();
+    bool isGameOver();
+    void displayScores();
+    bool isStarved();
+
 };
 
 #endif //AWALEGAME_H

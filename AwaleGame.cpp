@@ -7,7 +7,7 @@
 
 using namespace std;
 
-AwaleGame::AwaleGame(): _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1) {
+AwaleGame::AwaleGame(): _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1), _totalSeedsOnBoard(64) {
     for (int i = 0; i < 16; ++i) {
         _board[i].red = 2;
         _board[i].blue = 2;
@@ -55,7 +55,10 @@ void AwaleGame::playGame() {
             cout << "Coup non valide, essayez a nouveau.\n";
         }
 
-    } while (true);
+    } while (!isGameOver());
+
+    cout << "La partie est terminee !\n";
+    displayScores();
 }
 
 bool AwaleGame::makeMove(const string &input) {
@@ -166,6 +169,7 @@ bool AwaleGame::makeMove(const string &input) {
     }
 
     // Ajout des seeds capturées au score du joueur courant
+    _totalSeedsOnBoard -= capturedSeeds;
     if (_currentPlayer == 1) {
         _scorePlayer1 += capturedSeeds;
     } else {
@@ -180,4 +184,67 @@ bool AwaleGame::makeMove(const string &input) {
 
 inline void AwaleGame::switchPlayer() {
     _currentPlayer = 3 - _currentPlayer;
+}
+
+bool AwaleGame::isGameOver() {
+    // Un joueur a un score >= 33
+    if (_scorePlayer1 >= 33 || _scorePlayer2 >= 33) {
+        return true;
+    }
+
+    // Les deux joueurs ont un score = 32 (match nul)
+    if (_scorePlayer1 == 32 && _scorePlayer2 == 32) {
+        return true;
+    }
+
+    // Il reste moins de 8 graines sur le plateau
+    if (_totalSeedsOnBoard < 8) {
+        return true;
+    }
+
+    // Si un joueur est affamé
+    if (isStarved()) {
+        if (isStarved()) {
+            int remainingSeeds = 0;
+            int start = (_currentPlayer == 1) ? 1 : 0; // Commencer par les cases du joueur non-affamé
+
+            // Parcours des cases du joueur non-affamé
+            for (int i = start; i < 16; i += 2) {
+                remainingSeeds += _board[i].red + _board[i].blue;
+                _board[i].red = 0;  // Vider les graines
+                _board[i].blue = 0;
+            }
+
+            // Ajouter les graines restantes au score de l'autre joueur
+            if (_currentPlayer == 1) {
+                _scorePlayer2 += remainingSeeds;
+            } else {
+                _scorePlayer1 += remainingSeeds;
+            }
+
+            return true;  // Le jeu se termine ici en cas de famine
+        }
+    }
+
+    return false;
+}
+
+void AwaleGame::displayScores() {
+    cout << "Score Joueur 1 : " << _scorePlayer1 << "\n";
+    cout << "Score Joueur 2 : " << _scorePlayer2 << "\n";
+}
+
+bool AwaleGame::isStarved() {
+    int start = _currentPlayer == 1 ? 1 : 0;
+    bool hasSeeds = false;
+
+    // Parcours des cases du joueur actuel
+    for (int i = start; i < 16; i += 2) {  // Sauter une case pour vérifier uniquement les cases paires ou impaires
+        if (_board[i].red > 0 || _board[i].blue > 0) {
+            hasSeeds = true;
+            break;  // Si on trouve des graines, on sait que le joueur n'est pas affamé
+        }
+    }
+
+    return !hasSeeds; // Retourne vrai si aucune graine n'est trouvée
 }
