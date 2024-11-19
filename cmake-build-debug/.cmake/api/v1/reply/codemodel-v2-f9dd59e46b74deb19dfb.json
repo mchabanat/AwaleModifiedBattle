@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle/cmake-build-debug",
-		"source" : "C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle"
+		"build" : "D:/COURS/Master/S1/AIGameProg/AwaleModifiedBattle/cmake-build-debug",
+		"source" : "D:/COURS/Master/S1/AIGameProg/AwaleModifiedBattle"
 	},
 	"version" : 
 	{

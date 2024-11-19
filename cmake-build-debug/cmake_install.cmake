@@ -1,4 +1,4 @@
-# Install script for directory: C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle
+# Install script for directory: D:/COURS/Master/S1/AIGameProg/AwaleModifiedBattle
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/COURS/M1/S1/AI Game Programming/AwaleModifiedBattle/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "D:/COURS/Master/S1/AIGameProg/AwaleModifiedBattle/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

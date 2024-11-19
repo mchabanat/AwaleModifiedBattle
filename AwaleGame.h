@@ -31,6 +31,7 @@ public:
     void displayBoard();
     void playGame();
     bool makeMove(const std::string &);
+    void captureSeeds(Move, int);
     void switchPlayer();
     bool isGameOver();
     void displayScores();
