@@ -7,7 +7,17 @@
 
 using namespace std;
 
-AwaleGame::AwaleGame(): _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1), _totalSeedsOnBoard(64) {
+AwaleGame::AwaleGame(int gamemode, int playerToBegin): _gamemode(gamemode), _playerBegin(playerToBegin), _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1), _totalSeedsOnBoard(64) {
+    if (gamemode < 1 || gamemode > 2) {
+        cerr << "Gamemode invalide. Utilisez 1 pour singleplayer ou 2 pour multiplayer." << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (playerToBegin < 1 || playerToBegin > 2) {
+        cerr << "PlayerBegin invalide. Utilisez '1' pour joueur 1(humain) ou '2' pour joueur 2(IA)." << endl;
+        exit(EXIT_FAILURE);
+    }
+
     for (int i = 0; i < 16; ++i) {
         _board[i].red = 2;
         _board[i].blue = 2;
@@ -51,6 +61,25 @@ void AwaleGame::displayBoard() {
 }
 
 void AwaleGame::playGame() {
+    if (_gamemode == 1) {
+        cout << "Mode singleplayer selectionne." << endl;
+        if (_playerBegin == 1) {
+            cout << "L'humain commence la partie." << endl;
+        } else {
+            cout << "L'IA commence la partie." << endl;
+            switchPlayer();
+        }
+
+    } else if (_gamemode == 'H') {
+        cout << "Mode multiplayer selectionne." << endl;
+        if (_playerBegin == 1) {
+            cout << "Le joueur 1 commence la partie." << endl;
+        } else {
+            cout << "Le joueur 2 commence la partie." << endl;
+            switchPlayer();
+        }
+    }
+
     do {
         displayBoard();
 
@@ -70,7 +99,6 @@ void AwaleGame::playGame() {
         if (!makeMove(choice)) {
             cout << "Coup non valide, essayez a nouveau.\n";
         }
-
     } while (!isGameOver());
 
     cout << "La partie est terminee !\n";
