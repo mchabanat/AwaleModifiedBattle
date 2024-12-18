@@ -5,12 +5,14 @@
 #include "AwaleGame.h"
 #include <iostream>
 #include <limits>
+#include <algorithm> // pour std::max
+#include <cstdlib>   // pour std::rand, std::srand
 
 using namespace std;
 
-AwaleGame::AwaleGame(int gamemode, int playerToBegin): _gamemode(gamemode), _playerBegin(playerToBegin), _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1), _totalSeedsOnBoard(64) {
-    if (gamemode < 1 || gamemode > 2) {
-        cerr << "Gamemode invalide. Utilisez 1 pour singleplayer ou 2 pour multiplayer." << endl;
+AwaleGame::AwaleGame(int gamemode, int playerToBegin): _gamemode(gamemode), _playerBegin(playerToBegin), _scorePlayer1(0), _scorePlayer2(0), _currentPlayer(1), _totalSeedsOnBoard(64), _movesSinceLastCapture(0) {
+    if (gamemode < 1 || gamemode > 3) {
+        cerr << "Gamemode invalide. Utilisez 1 pour singleplayer, 2 pour multiplayer ou 3 pour IA vs IA." << endl;
         exit(EXIT_FAILURE);
     }
 
@@ -63,48 +65,60 @@ void AwaleGame::displayBoard() {
 
 void AwaleGame::playGame() {
     if (_gamemode == 1) {
-        cout << "Mode singleplayer sélectionné." << endl;
+        cout << "Mode singleplayer selectionne." << endl;
         if (_playerBegin == 2) {
             switchPlayer(); // L'IA commence
         }
-    } else {
-        cout << "Mode multiplayer sélectionné." << endl;
+    } else if (_gamemode == 2) {
+        cout << "Mode multiplayer selectionne." << endl;
+    } else if (_gamemode == 3) {
+        cout << "Mode IA vs IA selectionne." << endl;
     }
 
     do {
         displayBoard();
         displayScores();
 
-        if (_currentPlayer == 1) {
-            cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
-            string choice;
-            cin >> choice;
-            if (!makeMove(choice)) {
-                cout << "Coup non valide, essayez à nouveau.\n";
-            }
-        } else {
-            if (_gamemode == 1) {
-                cout << "L'IA reflechit...\n";
-                Move best = findBestMove(5); // profondeur = 5, ajuster selon la performance souhaitée
-                cout << "L'IA joue le coup : " << (best.holeNumber + 1);
-                if (best.color == Red) {
-                    cout << "R\n";
-                } else {
-                    cout << "B\n";
-                }
-                makeMove(best);
-            } else {
-                cout << "Joueur 2, choisissez un trou impair (1,3,...,15) et une couleur (B-R) :";
+        if (_gamemode == 3) {
+            // IA vs IA
+            cout << "Tour du joueur " << _currentPlayer << " (IA)...\n";
+            Move best = findBestMove( 6); // profondeur au choix
+            cout << "L'IA " << _currentPlayer << " joue le coup : " << (best.holeNumber + 1)
+                 << (best.color == Red ? 'R' : 'B') << "\n";
+            makeMove(best);
+        } else if (_gamemode == 1) {
+            // Humain vs IA
+            if (_currentPlayer == 1) {
+                cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
                 string choice;
                 cin >> choice;
                 if (!makeMove(choice)) {
-                    cout << "Coup non valide, essayez à nouveau.\n";
+                    cout << "Coup non valide, essayez a nouveau.\n";
                 }
+            } else {
+                cout << "L'IA reflechit...\n";
+                Move best = findBestMove(5);
+                cout << "L'IA joue le coup : " << (best.holeNumber + 1)
+                     << (best.color == Red ? 'R' : 'B') << "\n";
+                makeMove(best);
+            }
+        } else {
+            // Mode 2 : Humain vs Humain
+            if (_currentPlayer == 1) {
+                cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
+            } else {
+                cout << "Joueur 2, choisissez un trou impair (1,3,...,15) et une couleur (B-R) :";
+            }
+            string choice;
+            cin >> choice;
+            if (!makeMove(choice)) {
+                cout << "Coup non valide, essayez a nouveau.\n";
             }
         }
     } while (!isGameOver());
 
-    cout << "La partie est terminée !\n";
+    cout << "La partie est terminee !\n";
+    displayBoard();
     displayScores();
 }
 
@@ -259,6 +273,13 @@ void AwaleGame::captureSeeds(const Move movePlayed, int nbOfHoleVisited) {
     } else {
         _scorePlayer2 += capturedSeeds;
     }
+
+    // Mise à jour de movesSinceLastCapture
+    if (capturedSeeds > 0) {
+        _movesSinceLastCapture = 0;
+    } else {
+        _movesSinceLastCapture++;
+    } 
 }
 
 inline void AwaleGame::switchPlayer() {
@@ -351,8 +372,92 @@ vector<AwaleGame::Move> AwaleGame::generateAllMoves(int player) {
     return moves;
 }
 
-int AwaleGame::evaluateBoard() {
-    return _scorePlayer2 - _scorePlayer1;
+int AwaleGame::evaluateBoard(int maximizingPlayer) {
+    int aiScore, opponentScore;
+    if (maximizingPlayer == 1) {
+        aiScore = _scorePlayer1;
+        opponentScore = _scorePlayer2;
+    } else {
+        aiScore = _scorePlayer2;
+        opponentScore = _scorePlayer1;
+    }
+    int scoreDifference = aiScore - opponentScore;
+
+    // Critère 1 : Différence de score
+    // Plus le scoreDifference est élevé, mieux c'est pour l'IA.
+    int evaluation = scoreDifference * 10;
+
+    // Critère 2 : Trous capturables
+    // On compte combien de trous sont capturables et par qui.
+    // on donne un petit avantage si beaucoup de trous sont à 2 ou 3 graines juste avant
+    // le tour de l'IA, et un désavantage s'ils sont faciles à capturer par l'adversaire.
+    int holesWith2or3 = 0;
+    for (int i = 0; i < 16; i++) {
+        int totalSeeds = _board[i].red + _board[i].blue;
+        if (totalSeeds == 2 || totalSeeds == 3) {
+            holesWith2or3++;
+        }
+    }
+
+    if (_currentPlayer == maximizingPlayer) {
+        evaluation += holesWith2or3 * 2; // Bonus si l'IA peut capturer au prochain coup.
+    } else {
+        evaluation -= holesWith2or3 * 2; // Malus si l'adversaire peut en profiter avant l'IA.
+    }
+
+    // Critère 3 : Contrôle des graines
+    // On peut essayer de compter le nombre total de graines appartenant au joueur 2 vs joueur 1.
+    // cela peut aider à prévoir le futur.
+    int player1SeedsOnBoard = 0;
+    int player2SeedsOnBoard = 0;
+    for (int i = 0; i < 16; i++) {
+        int seeds = _board[i].red + _board[i].blue;
+        if ((i % 2) == 1) {
+            // Trous impairs : joueur 1
+            player1SeedsOnBoard += seeds;
+        } else {
+            // Trous pairs : joueur 2
+            player2SeedsOnBoard += seeds;
+        }
+    }
+
+    // Si maximizingPlayer == 1, aiSeedsOnBoard correspond à player1SeedsOnBoard
+    // sinon aiSeedsOnBoard correspond à player2SeedsOnBoard
+    int aiSeedsOnBoard = (maximizingPlayer == 1) ? player1SeedsOnBoard : player2SeedsOnBoard;
+    int oppSeedsOnBoard = (maximizingPlayer == 1) ? player2SeedsOnBoard : player1SeedsOnBoard;
+
+    int boardControl = aiSeedsOnBoard - oppSeedsOnBoard;
+    // On donne un petit poids à ce contrôle : s'il y a beaucoup plus de graines chez l'IA,
+    // elle a potentiellement plus d'options à l'avenir.
+    evaluation += boardControl;
+
+    // Critère 4 : Phase du jeu
+    // Moins il reste de graines sur le plateau, plus la différence de score est critique.
+    // s'il reste très peu de graines, on vient multiplier l'impact du scoreDifference.
+    if (_totalSeedsOnBoard < 20) {
+        evaluation += scoreDifference * 5;
+    }
+
+    // Critère 5 : Famine
+    // On considère la famine si un des joueurs n'a plus de graines dans ses trous.
+    if (oppSeedsOnBoard == 0) {
+        // L'adversaire est affamé, énorme bonus
+        evaluation += 100;
+    }
+    if (aiSeedsOnBoard == 0) {
+        // L'IA est affamée, énorme malus
+        evaluation -= 100;
+    }
+
+    // Critère 6 : prise de risque
+    int riskBonus = (64 - _totalSeedsOnBoard) / 5; // On divise par 5 pour modérer l'effet
+    evaluation += riskBonus;
+
+    // Critère 7 : anti-stagnation
+    int stagnationPenalty = (_movesSinceLastCapture / 5);
+    evaluation -= stagnationPenalty;
+
+    return evaluation;
 }
 
 bool AwaleGame::simulateMove(const Move &m, AwaleGame &nextState) {
@@ -360,29 +465,29 @@ bool AwaleGame::simulateMove(const Move &m, AwaleGame &nextState) {
     return nextState.makeMove(m);
 }
 
-int AwaleGame::minimax(AwaleGame state, int depth, int alpha, int beta, bool maximizingPlayer) {
-    // Condition d'arrêt
+int AwaleGame::minimax(AwaleGame state, int depth, int alpha, int beta, bool maximizing, int maximizingPlayer) {
     if (depth == 0 || state.isGameOver()) {
-        return state.evaluateBoard();
+        return state.evaluateBoard(maximizingPlayer);
     }
 
-    int playerToMove = maximizingPlayer ? 2 : 1; // Ici on suppose que le joueur 2 = IA (maximizing)
-    vector<Move> moves = state.generateAllMoves(playerToMove);
+    int playerToMove = maximizing ? maximizingPlayer : (3 - maximizingPlayer);
+
+    // Génération des coups pour playerToMove
+    auto moves = state.generateAllMoves(playerToMove);
 
     if (moves.empty()) {
-        // Pas de coups possibles => évaluation
-        return state.evaluateBoard();
+        return state.evaluateBoard(maximizingPlayer);
     }
 
-    if (maximizingPlayer) {
+    if (maximizing) {
         int maxEval = numeric_limits<int>::min();
         for (auto &m : moves) {
             AwaleGame child = state;
-            if (state.simulateMove(m, child)) {
-                int eval = minimax(child, depth-1, alpha, beta, false);
+            if (child.makeMove(m)) {
+                int eval = minimax(child, depth-1, alpha, beta, false, maximizingPlayer);
                 maxEval = max(maxEval, eval);
                 alpha = max(alpha, eval);
-                if (beta <= alpha) break; // coupe alpha-beta
+                if (beta <= alpha) break;
             }
         }
         return maxEval;
@@ -390,11 +495,11 @@ int AwaleGame::minimax(AwaleGame state, int depth, int alpha, int beta, bool max
         int minEval = numeric_limits<int>::max();
         for (auto &m : moves) {
             AwaleGame child = state;
-            if (state.simulateMove(m, child)) {
-                int eval = minimax(child, depth-1, alpha, beta, true);
+            if (child.makeMove(m)) {
+                int eval = minimax(child, depth-1, alpha, beta, true, maximizingPlayer);
                 minEval = min(minEval, eval);
                 beta = min(beta, eval);
-                if (beta <= alpha) break; // coupe
+                if (beta <= alpha) break;
             }
         }
         return minEval;
@@ -402,25 +507,40 @@ int AwaleGame::minimax(AwaleGame state, int depth, int alpha, int beta, bool max
 }
 
 AwaleGame::Move AwaleGame::findBestMove(int depth) {
-    // Ici l'IA est le joueur 2, maximizingPlayer = true
-    vector<Move> moves = generateAllMoves(2);
+    int maximizingPlayer = _currentPlayer;
+    auto moves = generateAllMoves(maximizingPlayer);
     Move bestMove;
     int bestValue = numeric_limits<int>::min();
     int alpha = numeric_limits<int>::min();
     int beta = numeric_limits<int>::max();
 
+    // Vecteur pour stocker tous les meilleurs coups
+    std::vector<Move> bestMoves;
+
     for (auto &m : moves) {
         AwaleGame child = *this;
-        if (simulateMove(m, child)) {
-            int eval = minimax(child, depth-1, alpha, beta, false);
+        if (child.makeMove(m)) {
+            int eval = minimax(child, depth-1, alpha, beta, false, maximizingPlayer);
             if (eval > bestValue) {
                 bestValue = eval;
-                bestMove = m;
+                bestMoves.clear();
+                bestMoves.push_back(m);
+            } else if (eval == bestValue) {
+                // Ce coup a la même valeur que le meilleur coup actuel
+                bestMoves.push_back(m);
             }
             alpha = max(alpha, eval);
             if (beta <= alpha) break;
         }
     }
 
-    return bestMove;
+    // Si plusieurs coups ont la même meilleure valeur, on en choisit un au hasard
+    if (!bestMoves.empty()) {
+        int randomIndex = rand() % bestMoves.size();
+        return bestMoves[randomIndex];
+    }
+
+    // Si pour une raison quelconque on n'a pas de meilleur coup, on renvoie le premier coup
+    // (Cas théorique qui ne devrait pas arriver si on gère correctement)
+    return moves.front();
 }

@@ -30,11 +30,12 @@ private:
     int _scorePlayer2;
     int _currentPlayer;    // 1 pour joueur Humain, 2 pour joueur IA
     int _totalSeedsOnBoard;
+    int _movesSinceLastCapture;
 
     // Fonctions pour IA
     vector<Move> generateAllMoves(int);
-    int evaluateBoard();
-    int minimax(AwaleGame, int, int, int, bool);
+    int evaluateBoard(int);
+    int minimax(AwaleGame, int, int, int, bool, int);
     Move findBestMove(int);
     bool simulateMove(const Move &, AwaleGame &); // Fonction pour simuler un coup sans modifier l'état courant
 
