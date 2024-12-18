@@ -4,6 +4,7 @@
 
 #include "AwaleGame.h"
 #include <iostream>
+#include <limits>
 
 using namespace std;
 
@@ -62,46 +63,48 @@ void AwaleGame::displayBoard() {
 
 void AwaleGame::playGame() {
     if (_gamemode == 1) {
-        cout << "Mode singleplayer selectionne." << endl;
-        if (_playerBegin == 1) {
-            cout << "L'humain commence la partie." << endl;
-        } else {
-            cout << "L'IA commence la partie." << endl;
-            switchPlayer();
+        cout << "Mode singleplayer sélectionné." << endl;
+        if (_playerBegin == 2) {
+            switchPlayer(); // L'IA commence
         }
-
-    } else if (_gamemode == 'H') {
-        cout << "Mode multiplayer selectionne." << endl;
-        if (_playerBegin == 1) {
-            cout << "Le joueur 1 commence la partie." << endl;
-        } else {
-            cout << "Le joueur 2 commence la partie." << endl;
-            switchPlayer();
-        }
+    } else {
+        cout << "Mode multiplayer sélectionné." << endl;
     }
 
     do {
         displayBoard();
-
-        // Afficher les scores
         displayScores();
 
-        // Saisie du coup du joueur
         if (_currentPlayer == 1) {
             cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
+            string choice;
+            cin >> choice;
+            if (!makeMove(choice)) {
+                cout << "Coup non valide, essayez à nouveau.\n";
+            }
         } else {
-            cout << "Joueur 2, choisissez un trou impair (1,3,...,15) et une couleur (B-R) :";
-        }
-        string choice;
-        cin >> choice;
-
-        // Faire le mouvement
-        if (!makeMove(choice)) {
-            cout << "Coup non valide, essayez a nouveau.\n";
+            if (_gamemode == 1) {
+                cout << "L'IA reflechit...\n";
+                Move best = findBestMove(5); // profondeur = 5, ajuster selon la performance souhaitée
+                cout << "L'IA joue le coup : " << (best.holeNumber + 1);
+                if (best.color == Red) {
+                    cout << "R\n";
+                } else {
+                    cout << "B\n";
+                }
+                makeMove(best);
+            } else {
+                cout << "Joueur 2, choisissez un trou impair (1,3,...,15) et une couleur (B-R) :";
+                string choice;
+                cin >> choice;
+                if (!makeMove(choice)) {
+                    cout << "Coup non valide, essayez à nouveau.\n";
+                }
+            }
         }
     } while (!isGameOver());
 
-    cout << "La partie est terminee !\n";
+    cout << "La partie est terminée !\n";
     displayScores();
 }
 
@@ -152,11 +155,14 @@ bool AwaleGame::makeMove(const string &input) {
         return false;
     }
 
-    // Jouer le coup
-    int seeds = (move.color == Red) ? _board[move.holeNumber].red : _board[move.holeNumber].blue;
-    int holeVisited = 0;
+    return makeMove(move);
+}
 
-    // Vide le trou de départ de la couleur choisie
+// Surcharge pour exécuter un Move directement (utilisé par l'IA)
+bool AwaleGame::makeMove(const Move &move) {
+    int seeds = (move.color == Red) ? _board[move.holeNumber].red : _board[move.holeNumber].blue;
+
+    // Vider le trou de la couleur jouée
     if (move.color == Red) {
         _board[move.holeNumber].red = 0;
     } else {
@@ -164,39 +170,32 @@ bool AwaleGame::makeMove(const string &input) {
     }
 
     int index = move.holeNumber;
+    int holeVisited = 0;
 
-    // Distribution des graines bleues
+    // Distribution bleue
     if (move.color == Blue) {
         while (seeds > 0) {
             index = (index + 1) % 16;
-
-            // Ne pas redistribuer dans le trou de départ
-            if (index == move.holeNumber) continue;
-
+            if (index == move.holeNumber) continue; // Si on revient au trou de départ, on le saute
             _board[index].blue++;
             holeVisited++;
             seeds--;
         }
     }
 
-    // Distribution des graines rouges avec saut de 2 cases
+    // Distribution rouge
     if (move.color == Red) {
-        // Passer directement au premier trou de l’adversaire
         index = (index + 1) % 16;
-
         while (seeds > 0) {
             _board[index].red++;
             holeVisited++;
             seeds--;
-
-            // Incrément de 2 à chaque tour pour passer aux cases adverses
             index = (index + 2) % 16;
         }
     }
 
     // Capture des graines
     captureSeeds(move, holeVisited);
-
     // Changer de joueur
     switchPlayer();
 
@@ -284,26 +283,24 @@ bool AwaleGame::isGameOver() {
 
     // Si un joueur est affamé
     if (isStarved()) {
-        if (isStarved()) {
-            int remainingSeeds = 0;
-            int start = (_currentPlayer == 1) ? 1 : 0; // Commencer par les cases du joueur non-affamé
+        int remainingSeeds = 0;
+        int start = (_currentPlayer == 1) ? 1 : 0; // Commencer par les cases du joueur non-affamé
 
-            // Parcours des cases du joueur non-affamé
-            for (int i = start; i < 16; i += 2) {
-                remainingSeeds += _board[i].red + _board[i].blue;
-                _board[i].red = 0;  // Vider les graines
-                _board[i].blue = 0;
-            }
-
-            // Ajouter les graines restantes au score de l'autre joueur
-            if (_currentPlayer == 1) {
-                _scorePlayer2 += remainingSeeds;
-            } else {
-                _scorePlayer1 += remainingSeeds;
-            }
-
-            return true;  // Le jeu se termine ici en cas de famine
+        // Parcours des cases du joueur non-affamé
+        for (int i = start; i < 16; i += 2) {
+            remainingSeeds += _board[i].red + _board[i].blue;
+            _board[i].red = 0;  // Vider les graines
+            _board[i].blue = 0;
         }
+
+        // Ajouter les graines restantes au score de l'autre joueur
+        if (_currentPlayer == 1) {
+            _scorePlayer2 += remainingSeeds;
+        } else {
+            _scorePlayer1 += remainingSeeds;
+        }
+
+        return true;  // Le jeu se termine ici en cas de famine
     }
 
     return false;
@@ -327,4 +324,103 @@ bool AwaleGame::isStarved() {
     }
 
     return !hasSeeds; // Retourne vrai si aucune graine n'est trouvée
+}
+
+// Fonctions pour IA
+vector<AwaleGame::Move> AwaleGame::generateAllMoves(int player) {
+    vector<Move> moves;
+    // Trous contrôlés par le joueur
+    // Joueur 1 => trous pairs: indices (1,3,5...) => en code : i%2 !=0
+    // Joueur 2 => trous impairs: indices (0,2,4...) => i%2 ==0
+    int start = (player == 1) ? 1 : 0;
+    for (int i = start; i < 16; i += 2) {
+        // Si red > 0, move Red possible
+        if (_board[i].red > 0) {
+            Move m;
+            m.holeNumber = i;
+            m.color = Red;
+            moves.push_back(m);
+        }
+        // Si blue > 0, move Blue possible
+        if (_board[i].blue > 0) {
+            Move m; m.holeNumber = i; m.color = Blue;
+            moves.push_back(m);
+        }
+    }
+
+    return moves;
+}
+
+int AwaleGame::evaluateBoard() {
+    return _scorePlayer2 - _scorePlayer1;
+}
+
+bool AwaleGame::simulateMove(const Move &m, AwaleGame &nextState) {
+    nextState = *this; // Copie de l'état courant
+    return nextState.makeMove(m);
+}
+
+int AwaleGame::minimax(AwaleGame state, int depth, int alpha, int beta, bool maximizingPlayer) {
+    // Condition d'arrêt
+    if (depth == 0 || state.isGameOver()) {
+        return state.evaluateBoard();
+    }
+
+    int playerToMove = maximizingPlayer ? 2 : 1; // Ici on suppose que le joueur 2 = IA (maximizing)
+    vector<Move> moves = state.generateAllMoves(playerToMove);
+
+    if (moves.empty()) {
+        // Pas de coups possibles => évaluation
+        return state.evaluateBoard();
+    }
+
+    if (maximizingPlayer) {
+        int maxEval = numeric_limits<int>::min();
+        for (auto &m : moves) {
+            AwaleGame child = state;
+            if (state.simulateMove(m, child)) {
+                int eval = minimax(child, depth-1, alpha, beta, false);
+                maxEval = max(maxEval, eval);
+                alpha = max(alpha, eval);
+                if (beta <= alpha) break; // coupe alpha-beta
+            }
+        }
+        return maxEval;
+    } else {
+        int minEval = numeric_limits<int>::max();
+        for (auto &m : moves) {
+            AwaleGame child = state;
+            if (state.simulateMove(m, child)) {
+                int eval = minimax(child, depth-1, alpha, beta, true);
+                minEval = min(minEval, eval);
+                beta = min(beta, eval);
+                if (beta <= alpha) break; // coupe
+            }
+        }
+        return minEval;
+    }
+}
+
+AwaleGame::Move AwaleGame::findBestMove(int depth) {
+    // Ici l'IA est le joueur 2, maximizingPlayer = true
+    vector<Move> moves = generateAllMoves(2);
+    Move bestMove;
+    int bestValue = numeric_limits<int>::min();
+    int alpha = numeric_limits<int>::min();
+    int beta = numeric_limits<int>::max();
+
+    for (auto &m : moves) {
+        AwaleGame child = *this;
+        if (simulateMove(m, child)) {
+            int eval = minimax(child, depth-1, alpha, beta, false);
+            if (eval > bestValue) {
+                bestValue = eval;
+                bestMove = m;
+            }
+            alpha = max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+    }
+
+    return bestMove;
 }
