@@ -63,7 +63,7 @@ void AwaleGame::displayBoard() {
     cout << "\n\n";
 }
 
-void AwaleGame::playGame() {
+void AwaleGame::playGame(int nbIA) {
     if (_gamemode == 1) {
         cout << "Mode singleplayer selectionne." << endl;
         if (_playerBegin == 2) {
@@ -79,31 +79,15 @@ void AwaleGame::playGame() {
         displayBoard();
         displayScores();
 
-        if (_gamemode == 3) {
-            // IA vs IA
+        if (_gamemode == 3 || _currentPlayer == nbIA) {
+            // IA joue
             cout << "Tour du joueur " << _currentPlayer << " (IA)...\n";
-            Move best = findBestMove( 6); // profondeur au choix
+            Move best = findBestMove(8); // profondeur au choix
             cout << "L'IA " << _currentPlayer << " joue le coup : " << (best.holeNumber + 1)
                  << (best.color == Red ? 'R' : 'B') << "\n";
             makeMove(best);
-        } else if (_gamemode == 1) {
-            // Humain vs IA
-            if (_currentPlayer == 1) {
-                cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
-                string choice;
-                cin >> choice;
-                if (!makeMove(choice)) {
-                    cout << "Coup non valide, essayez a nouveau.\n";
-                }
-            } else {
-                cout << "L'IA reflechit...\n";
-                Move best = findBestMove(5);
-                cout << "L'IA joue le coup : " << (best.holeNumber + 1)
-                     << (best.color == Red ? 'R' : 'B') << "\n";
-                makeMove(best);
-            }
         } else {
-            // Mode 2 : Humain vs Humain
+            // Humain joue
             if (_currentPlayer == 1) {
                 cout << "Joueur 1, choisissez un trou pair (2,4,...,16) et une couleur (B-R) :";
             } else {
@@ -218,8 +202,9 @@ bool AwaleGame::makeMove(const Move &move) {
 
 void AwaleGame::captureSeeds(const Move movePlayed, int nbOfHoleVisited) {
     int capturedSeeds = 0;
-    bool visitHolePlayed = true;
+    //bool visitHolePlayed = true;
 
+    bool stop = false;
     if (movePlayed.color == Blue) {
         int index = (movePlayed.holeNumber+nbOfHoleVisited)%16;
         do {
@@ -230,41 +215,46 @@ void AwaleGame::captureSeeds(const Move movePlayed, int nbOfHoleVisited) {
                 _board[index].blue = 0;
                 _board[index].red = 0;
             } else {
-                visitHolePlayed = false;
+                //visitHolePlayed = false;
+                stop = true;
                 break;
             }
             index = (index - 1 + 16) % 16;
-        } while(nbOfHoleVisited > 0);
+        } while(!stop);
     }
 
     if (movePlayed.color == Red) {
         int index = (movePlayed.holeNumber + 1 + 2 * (nbOfHoleVisited-1)) % 16; // +1 : Pour avancer d’une case pour la première graine.
                                                                                 // +2*(nbOfHoleVisited−1) : Pour les graines restantes, chaque graine avance de 2 cases supplémentaires.
+        int lastIndex = index;
         do {
             // Capture des seeds dans le trou actuel
             int seedsInHole = _board[index].blue + _board[index].red;
-            nbOfHoleVisited--;
+            if ((index % 2) == (lastIndex % 2)) {
+                nbOfHoleVisited--;
+            }
             if (seedsInHole == 2 || seedsInHole == 3) {
                 capturedSeeds += seedsInHole;
                 _board[index].blue = 0;
                 _board[index].red = 0;
             } else {
-                visitHolePlayed = false;
+                //visitHolePlayed = false;
+                stop = true;
                 break;
             }
-            index = (index - 2 + 16) % 16;
-        } while(nbOfHoleVisited > 0);
+            index = (index - 1 + 16) % 16;
+        } while(!stop);
     }
 
     // Verification sur le trou joué
-    if (visitHolePlayed) {
+    /*if (visitHolePlayed) {
         int seedsInHole = _board[movePlayed.holeNumber].blue + _board[movePlayed.holeNumber].red;
         if (seedsInHole == 2 || seedsInHole == 3) {
             capturedSeeds += seedsInHole;
             _board[movePlayed.holeNumber].blue = 0;
             _board[movePlayed.holeNumber].red = 0;
         }
-    }
+    }*/
 
     // Ajout des seeds capturées au score du joueur courant
     _totalSeedsOnBoard -= capturedSeeds;
@@ -279,7 +269,7 @@ void AwaleGame::captureSeeds(const Move movePlayed, int nbOfHoleVisited) {
         _movesSinceLastCapture = 0;
     } else {
         _movesSinceLastCapture++;
-    } 
+    }
 }
 
 inline void AwaleGame::switchPlayer() {

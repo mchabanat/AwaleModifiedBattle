@@ -42,7 +42,7 @@ private:
 public:
     AwaleGame(int, int);
     void displayBoard();
-    void playGame();
+    void playGame(int);
     bool makeMove(const string &);
     bool makeMove(const Move &); // surcharge pour IA
     void captureSeeds(Move, int);
