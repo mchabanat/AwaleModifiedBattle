@@ -17,7 +17,14 @@ Il y a deux paramètres à configurer dans le main.cpp :
 -	« 3 » pour faire une partie entre 2 IA (mode automatique)
 2. playerBegin 
 -	« 1 » pour que le joueur 1 commence 
--	« 2 » pour que le joueur 1 commence 
+-	« 2 » pour que le joueur 2 commence
+
+/!\ 
+J'ai eu des bugs avant la compétition donc pour jouer, 
+- laisser Gamemode à 1
+- Mettre playerBegin à 2
+- Et un 3e paramètre nbIA qu'il faut mettre à 1 si l'IA commence ou à 2 si elle joue en 2e
+/!\
 
 Une fois la configuration terminée, exécutez et jouez avec les règles suivantes.
 
